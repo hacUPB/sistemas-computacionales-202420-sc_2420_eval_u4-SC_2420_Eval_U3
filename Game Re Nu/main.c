@@ -143,7 +143,6 @@ void play_sound(const char* sound_path) {
     SDL_UnlockMutex(mutex_audio); 
 }
 
-// New function to play the sound when the player hits the screen limits
 void play_collision_sound() {
     play_sound("collision_sound.wav");
 }
@@ -154,7 +153,6 @@ int main(int argc, char* args[]) {
         return 1;
     }
 
-    // Initialize SDL Audio
     SDL_AudioSpec desired_spec;
     desired_spec.freq = 44100;
     desired_spec.format = AUDIO_S16SYS;
@@ -244,7 +242,6 @@ int main(int argc, char* args[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Draw everything
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_Rect player_rect = { player.x, player.y, player.width, player.height };
         SDL_RenderFillRect(renderer, &player_rect);
