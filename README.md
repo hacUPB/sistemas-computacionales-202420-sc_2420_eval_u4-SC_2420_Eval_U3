@@ -593,3 +593,5 @@ Después de que el sonido se haya cargado y colocado en la cola de audio con SDL
 - Sincronización en el hilo de audio:
 El hilo de audio también utiliza el mutex antes de acceder al dispositivo de audio. Así, si el hilo principal está esperando para reproducir un sonido, el hilo de audio debe esperar a que el mutex sea desbloqueado.
 Esta sincronización mediante mutex garantiza que solo un hilo pueda interactuar con el dispositivo de audio en un momento dado, evitando conflictos o errores.
+### DIFICULTAD
+Encontré varios problemas al intentar implementar los semáforos. A veces, los audios sonaban cortados o solo se reproducían de vez en cuando. Además, experimenté un problema en el que el juego se volvía más lento. Sin embargo, con un poco de  ayuda de ChatGPT, pude resolver algunos de estos problemas
