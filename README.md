@@ -575,40 +575,21 @@ int main(int argc, char* args[]) {
 
 ```
 ## Hilos 
-se utilizan hilos y mutexes para manejar la sincronización y la ejecución concurrente de tareas. El uso de hilos en este caso se centra en la reproducción de audio, mientras que las otras tareas del juego, como la lógica del movimiento de los objetos y la detección de colisiones, se realizan de forma secuencial en el hilo principal.
+1. Hilo principal (main thread):
 
-Hilos en la Aplicación
-1. Hilo de Audio:
-El hilo de audio es creado con la función SDL_CreateThread, que se ejecuta en paralelo al hilo principal. Este hilo se encarga de gestionar la reproducción de audio durante el juego, asegurándose de que los sonidos se reproduzcan sin bloquear el hilo principal, lo que permite que el juego siga funcionando de manera fluida.
+Se encarga de la lógica principal del juego, que incluye la actualización de la posición del jugador y los objetos (círculos y triángulos), la detección de colisiones, el aumento de dificultad, el renderizado en la pantalla, y la captura de eventos de teclado.
+Este hilo también maneja la verificación de la condición de "game over" y la actualización de la interfaz gráfica.
 
-Función: La función audio_callback es la que se ejecuta en el hilo de audio. Esta función entra en un bucle donde verifica constantemente si el juego ha terminado (a través de la variable global game_over). Mientras el juego esté en ejecución, se encarga de reproducir los sonidos utilizando SDL_QueueAudio y SDL_PauseAudioDevice.
-Sincronización con el hilo principal: El hilo de audio está sincronizado con el hilo principal mediante el uso de un mutex (un mecanismo de sincronización) para controlar el acceso a los recursos compartidos, en este caso, la reproducción de audio.
-2. Hilo Principal:
-El hilo principal gestiona la lógica del juego, que incluye el manejo de eventos, el movimiento de objetos, la detección de colisiones y el renderizado. En particular:
+2. Hilo de audio (audio_thread):
 
-Eventos: Captura los eventos del teclado para mover al jugador o realizar otras interacciones.
-Lógica de juego: Actualiza las posiciones de los objetos en el juego (jugador, círculos y triángulo), comprueba las colisiones, incrementa la dificultad y controla el estado del juego (si el jugador ha perdido o si el juego sigue corriendo).
-Renderizado: Dibuja todos los objetos en la pantalla en cada fotograma y actualiza la visualización.
-Sincronización de Hilos mediante Mutex
-Para evitar que el acceso a recursos compartidos (en este caso, la reproducción de audio) cause problemas de concurrencia, se utiliza un mutex (mutex_audio). Este mutex asegura que solo un hilo pueda acceder a la cola de audio a la vez.
+Este hilo maneja la reproducción del sonido durante el juego. Su tarea principal es cargar y reproducir los sonidos correspondientes en momentos específicos (cuando el jugador se mueve, cuando colisiona, o cuando cambia de estado como cuando se activa el "boost").
+El hilo de audio corre de manera independiente del hilo principal para asegurar que la reproducción del sonido no interfiera con las acciones del juego.
+- Sincronización mediante semáforos
+En este caso, se utiliza un mutex (SDL_mutex) como mecanismo de sincronización entre los hilos. El mutex se emplea para evitar que dos hilos accedan simultáneamente a recursos compartidos, como el dispositivo de audio, lo que podría provocar errores o comportamientos inesperados.
 
-Cómo funciona la sincronización:
-Bloqueo del mutex:
-
-En la función play_sound, el hilo principal solicita acceso al mutex antes de reproducir cualquier sonido con SDL_LockMutex(mutex_audio). Esto asegura que el hilo de audio no esté reproduciendo un sonido en ese momento.
-Reproducción de audio:
-
-Luego, el sonido se coloca en la cola de audio con SDL_QueueAudio, y se inicia la reproducción con SDL_PauseAudioDevice(device_id, 0).
-Desbloqueo del mutex:
-
-Después de que el sonido se ha colocado en la cola y se ha iniciado, el mutex se desbloquea con SDL_UnlockMutex(mutex_audio). Esto permite que el hilo de audio acceda nuevamente al recurso y continúe reproduciendo otros sonidos.
-De esta manera, se evita que los hilos accedan simultáneamente a los recursos de audio, lo que podría generar inconsistencias o colisiones de audio. El mutex actúa como un "candado" para garantizar que solo un hilo pueda realizar operaciones en el recurso compartido a la vez.
-
-Por qué es necesario el uso de hilos y mutexes:
-En aplicaciones de videojuegos, especialmente aquellas que manejan audio y gráficos, es común que el hilo principal de juego se vea bloqueado por tareas como la reproducción de sonidos o la carga de archivos. Si no se gestionaran adecuadamente, estas tareas bloquearían la ejecución del juego, causando una experiencia de usuario pobre. Al delegar la reproducción de audio a un hilo separado, se asegura que el juego continúe sin interrupciones.
-
-Resumen:
-El hilo principal gestiona la lógica del juego y el renderizado.
-El hilo de audio maneja la reproducción de sonidos en segundo plano.
-Se utilizan mutexes (mutex_audio) para sincronizar el acceso a los recursos de audio, garantizando que no haya interferencias entre el hilo principal y el hilo de audio.
-Este enfoque permite una experiencia de usuario más fluida, evitando bloqueos y permitiendo que el juego y el audio se gestionen de forma concurrente.
+- Uso del mutex en el hilo de audio:
+Cuando el hilo principal desea reproducir un sonido, primero bloquea el mutex utilizando SDL_LockMutex. Esto asegura que no haya otros hilos (como el hilo de audio) accediendo al dispositivo de audio al mismo tiempo.
+Después de que el sonido se haya cargado y colocado en la cola de audio con SDL_QueueAudio, se desbloquea el mutex utilizando SDL_UnlockMutex. Esto permite que el hilo de audio acceda y reproduzca el sonido sin interferencias.
+- Sincronización en el hilo de audio:
+El hilo de audio también utiliza el mutex antes de acceder al dispositivo de audio. Así, si el hilo principal está esperando para reproducir un sonido, el hilo de audio debe esperar a que el mutex sea desbloqueado.
+Esta sincronización mediante mutex garantiza que solo un hilo pueda interactuar con el dispositivo de audio en un momento dado, evitando conflictos o errores.
