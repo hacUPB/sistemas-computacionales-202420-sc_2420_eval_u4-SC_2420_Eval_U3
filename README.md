@@ -296,7 +296,7 @@ aquie agregue un power up que es un triangulo que aumenta la velocidad del juega
 
 ![image](https://github.com/user-attachments/assets/b02b28f7-36eb-4c1f-96d8-eb5f576b7abb)
 
-se agrega un sonido que es cunaod el jugador choca con los limites de la pantalla 
+se agrega un sonido el cual suena cunado el jugador toca los limites de la pantalla
 
 ![image](https://github.com/user-attachments/assets/663e5da8-bce5-4a31-8c60-55b7af9ae779)
 
