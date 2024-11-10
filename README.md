@@ -1,8 +1,8 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/XglgMq0o)
 # Documentación del Proyecto
 ---
-Estudiante:  
-Id:  
+Estudiante:  Tomas Mejia
+Id:  466315
 ---
 ### 1. ¿Cuál es la diferencia entre un programa y un proceso?
 Un programa es solo un archivo con instrucciones (como un archivo .exe).
@@ -274,15 +274,11 @@ El uso adecuado de semáforos evita que los hilos interfieran entre sí y previe
 # Evaluación Unidad 4
 ## Documentacion 
 
+utiliza semáforos (en forma de mutex) para sincronizar el acceso al recurso compartido de audio entre el hilo principal y el hilo de audio
+
+
 ![image](https://github.com/user-attachments/assets/ddf1cf40-3cd0-4f1c-8328-18bff9c4545f)
 
-
-no sabia como comenzar y por recomendacion me dicen que utilice el SDL_mutex para controlar el audio y cuanod sonaba 
-luego se agrego el lock 
-
-![image](https://github.com/user-attachments/assets/25ae33e9-8773-414f-87d7-bf4a5fbd3b28)
-
-para asegurar de que los audios no saonaran uno sobre el otro
 
 aqui ya se agrega el sonido de incioi del juego 
 
@@ -292,11 +288,11 @@ se agrega el sonido del movimeinto de player
 
 ![image](https://github.com/user-attachments/assets/35b77241-8c2f-4333-b81c-af736db8b74f)
 
-cuando se pierde 
+un sonido cunaod player toca a circle y genera un sonido el cual señala que perdiste 
 
 ![image](https://github.com/user-attachments/assets/f8fd92e8-c9f0-4ebc-8a31-30daf6f602ac)
 
-aquie agregue un power up que e sun triangulo que aumenta la velocidad del juegador y geenra un sonido cunado el jugador lo toca 
+aquie agregue un power up que es un triangulo que aumenta la velocidad del juegador y genera  un sonido cunado el jugador lo toca 
 
 ![image](https://github.com/user-attachments/assets/b02b28f7-36eb-4c1f-96d8-eb5f576b7abb)
 
