@@ -35,7 +35,242 @@ Los estados comunes de un proceso son:
 - Ejecutando: Usando la CPU.
 - Bloqueado: Esperando algo (como entrada/salida).
 - Terminado: Ha terminado y está listo para ser eliminado.
-- 
+
+### Ejercicio 4: creación de hilos
+ programa tiene dos hilos:
+
+- Hilo principal (en main):
+
+- Imprime la letra "o" continuamente en un bucle infinito.
+Hilo secundario (creado con pthread_create):
+
+Ejecuta la función imprime_x, que imprime la letra "x" continuamente en un bucle infinito.
+
+¿Qué ocurre al ejecutar el programa?
+
+Ambos hilos imprimen al mismo tiempo, por lo que en la terminal verás una mezcla de "o" y "x"
+### Ejercicio 5: análisis de código con hilos
+El problema es que el programa termina antes de que los hilos puedan imprimir nada porque exit() se ejecuta de inmediato.
+
+
+Usa pthread_join() para que el programa espere a que los hilos terminen antes de salir:
+
+### Ejercicio 6: esperar un hilo
+Debes usar pthread_join(), que bloquea el hilo principal hasta que el hilo especificado termine su ejecución. En el código anterior, se utiliza correctamente:
+```c
+pthread_join(threadID1, NULL);  // Espera a que threadID1 termine
+pthread_join(threadID2, NULL);  // Espera a que threadID2 termine
+```
+El hilo principal espera que el primer hilo termine antes de crear y esperar al segundo hilo.
+Secuencial: El hilo principal no inicia el segundo hilo hasta que el primero ha terminado.
+Segundo fragmento:
+
+```c
+pthread_create(&threadID1, NULL, &imprime, &threadParam1);
+pthread_create(&threadID2, NULL, &imprime, &threadParam2);
+pthread_join(threadID1, NULL);
+pthread_join(threadID2, NULL);
+```
+Ambos hilos se crean al mismo tiempo, y luego el hilo principal espera a que ambos terminen.
+Paralelo: Los hilos pueden ejecutarse simultáneamente.
+Esto garantiza que los hilos impriman 'a' y 'b' en la terminal antes de que el programa termine.
+lo que se puede relsatar es que en el primer fragmento, los hilos son ejecutados de manera secuencial
+### Ejercicio 7: para pensar
+Para trabajar con hilos en SDL2, la biblioteca proporciona funciones específicas para crear y manejar hilos, como SDL_CreateThread(), que es similar a los hilos en otras bibliotecas, pero con un enfoque adaptado al ecosistema SDL2.
+
+Creación de hilos con SDL2
+En SDL2, un hilo se crea utilizando SDL_CreateThread(). Esta función toma como parámetros el nombre de la función que ejecutará el hilo y un puntero a los datos que se pasarán a esa función. La función para el hilo debe devolver un int, que es el código de salida del hilo. Aquí tienes un ejemplo básico de cómo crear un hilo:
+#include <SDL.h>
+#include <stdio.h>
+```c
+int SDL_ThreadFunction(void* data) {
+    printf("¡Hilo en ejecución!\n");
+    return 0;
+}
+
+int main() {
+    SDL_Thread* thread = SDL_CreateThread(SDL_ThreadFunction, "MiHilo", NULL);
+    
+    if (thread == NULL) {
+        printf("Error al crear el hilo: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    SDL_WaitThread(thread, NULL);  // Esperar a que el hilo termine
+    return 0;
+}
+```
+En este código, SDL_CreateThread() crea un nuevo hilo que ejecuta SDL_ThreadFunction, y SDL_WaitThread() espera a que termine antes de continuar con el hilo principal
+
+Equivalente de join en SDL2
+En SDL2, el equivalente de join en otras bibliotecas de hilos es SDL_WaitThread(). Esta función bloquea el hilo principal hasta que el hilo especificado haya terminado su ejecución​
+Semáforos en SDL2
+Los semáforos en SDL2 se usan para la sincronización entre hilos, ayudando a evitar condiciones de carrera. Una condición de carrera ocurre cuando dos hilos acceden simultáneamente a un recurso compartido, lo que puede resultar en comportamientos indeseados debido a la falta de sincronización.
+
+Ejemplo de uso de un semáforo
+Puedes usar SDL_SemWait() para bloquear el semáforo y SDL_SemPost() para liberar el semáforo. Esto garantiza que solo un hilo acceda a un recurso compartido a la vez. A continuación, un ejemplo básico para evitar una condición de carrera:
+```c
+#include <SDL.h>
+#include <stdio.h>
+
+SDL_sem* sem;
+
+int contador = 0;
+
+int hilo(void* data) {
+    SDL_SemWait(sem);  // Espera el semáforo
+    for (int i = 0; i < 10; i++) {
+        contador++;
+        SDL_Delay(10);  // Simula trabajo
+    }
+    SDL_SemPost(sem);  // Libera el semáforo
+    return 0;
+}
+
+int main() {
+    sem = SDL_CreateSemaphore(1);  // Crea un semáforo con un valor inicial de 1 (solo un hilo puede acceder)
+
+    SDL_Thread* t1 = SDL_CreateThread(hilo, "Hilo1", NULL);
+    SDL_Thread* t2 = SDL_CreateThread(hilo, "Hilo2", NULL);
+
+    SDL_WaitThread(t1, NULL);
+    SDL_WaitThread(t2, NULL);
+
+    printf("Valor final del contador: %d\n", contador);
+
+    SDL_DestroySemaphore(sem);  // Libera el semáforo
+    return 0;
+}
+
+```
+Este ejemplo crea un semáforo que se asegura de que solo un hilo pueda modificar el contador a la vez, evitando así una condición de carrera. Si no se utilizara el semáforo, ambos hilos podrían intentar modificar el contador simultáneamente, lo que causaría un resultado inconsistente.
+### Ejercicio 8: ejemplo de referencia para la evaluación
+
+![alt text](image.png)
+
+Para que el programa reproduzca el sonido, el usuario debe presionar la tecla P. Esto ocurre dentro de la función process_input(), donde se captura el evento de pulsación de tecla y si la tecla presionada es SDLK_p, se llama a la función play_audio().
+
+Análisis del código para reproducir el sonido:
+Reproducción del audio:
+
+En la función play_audio(), se inicializa el dispositivo de audio (con SDL_OpenAudioDevice()), y se configura el formato del audio y la función de callback AudioCallback(), que se encarga de manejar el flujo de audio.
+La función AudioCallback() copia los datos de audio desde el buffer cargado (audioContext.audioData) hacia el stream de audio cada vez que SDL la invoca.
+El sonido se reproduce cuando se llama a SDL_PauseAudioDevice(audioDevice, 0).
+Sincronización:
+
+El problema ocurre porque, mientras se reproduce el sonido, el programa sigue ejecutando el juego. Esto puede generar un desorden o interrupciones en el flujo del programa debido a la falta de una sincronización adecuada entre los eventos de audio y el juego.
+Problema identificado:
+El principal problema es la sincronización entre la reproducción del audio y la ejecución del juego. Debido a que play_audio() se ejecuta de manera asíncrona, el código del juego sigue ejecutándose mientras el sonido se reproduce, lo que puede causar problemas si se intenta reproducir un sonido mientras otro ya está en reproducción.
+
+Solución propuesta con semáforos:
+Objetivo: Sincronizar la reproducción del sonido con la ejecución del juego, garantizando que solo se reproduzca un sonido a la vez y que el juego pueda esperar a que termine antes de continuar con otras acciones.
+
+Pasos para implementar la solución:
+
+- Crear un semáforo: El semáforo se utilizará para sincronizar el hilo de la reproducción de audio con el hilo principal del juego.
+```c
+SDL_Semaphore* audioSemaphore = NULL;
+```
+- nicializar el semáforo: El semáforo se inicializa antes de que se reproduzca cualquier sonido, para asegurarse de que haya un control sobre el acceso al hilo de audio.
+```c
+audioSemaphore = SDL_CreateSemaphore(1); 
+```
+- Uso del semáforo en la reproducción del audio:
+
+Antes de reproducir cualquier sonido, se debe tomar el semáforo para asegurarse de que no haya otro audio reproduciéndose.
+Cuando el audio termine de reproducirse, se libera el semáforo para permitir la reproducción de un nuevo sonido.
+Modificar la función play_audio():
+```c
+void play_audio(void) {
+    static uint8_t isaudioDeviceInit = 0;
+    static SDL_AudioSpec audioSpec;
+    static SDL_AudioDeviceID audioDevice = 0;
+    static AudioContext audioContext;
+
+    // Inicializar dispositivo de audio solo una vez
+    if (isaudioDeviceInit == 0) {
+        audioSpec.callback = AudioCallback;
+        audioSpec.userdata = &audioContext;
+
+        audioDevice = SDL_OpenAudioDevice(NULL, 0, &audioSpec, NULL, 0);
+        if (audioDevice == 0) {
+            printf("Unable to open audio device: %s\n", SDL_GetError());
+            return;
+        }
+        isaudioDeviceInit = 1;
+    }
+
+    // Tomar semáforo para asegurarse de que no haya un audio en ejecución
+    SDL_SemWait(audioSemaphore);
+
+    audioContext.audioPosition = 0;
+    audioContext.audioFinished = SDL_FALSE;
+
+    // Cargar archivo WAV
+    if (SDL_LoadWAV("tap.wav", &audioSpec, &audioContext.audioData, &audioContext.audioLength) != NULL) {
+        SDL_PauseAudioDevice(audioDevice, 0); // Comienza a reproducir audio
+    } else {
+        printf("Unable to load WAV file: %s\n", SDL_GetError());
+        SDL_SemPost(audioSemaphore);  // Liberar semáforo en caso de error
+        return;
+    }
+
+    // Esperar hasta que termine la reproducción del audio
+    while (audioContext.audioFinished != SDL_TRUE) {
+        SDL_Delay(100);
+    }
+
+    printf("Audio finished\n");
+
+    // Liberar semáforo cuando el audio termine
+    SDL_SemPost(audioSemaphore);
+
+    // Limpiar
+    SDL_CloseAudio(audioDevice);
+    SDL_FreeWAV(audioContext.audioData);
+}
+```
+ya como en conclucion 
+Sincronización con SDL_SemWait y SDL_SemPost:
+
+SDL_SemWait(audioSemaphore) es como una especie de "candado" que asegura que no se reproduzcan dos sonidos al mismo tiempo. Si ya hay un sonido sonando (el semáforo está bloqueado), el juego tiene que esperar hasta que termine para poder reproducir otro.
+Una vez que el sonido termina, SDL_SemPost(audioSemaphore) "libera el candado", permitiendo que el juego reproduzca otro sonido si es necesario.
+Ventajas:
+
+Evita que se escuchen sonidos mezclados, lo que puede causar un caos o ruidos extraños.
+Hace que el juego espere de manera ordenada a que termine el sonido antes de seguir con otras cosas.
+Conclusión: Usar un semáforo aquí ayuda a que el sonido y el juego trabajen bien juntos, evitando que se "interrumpan" y asegurando que no haya problemas con varios sonidos sonando a la vez.
+
+### Ejercicio 9
+En este ejemplo, usamos una variable global (shared) para que dos hilos puedan modificarla. Cada hilo simplemente aumenta en 1 el valor de shared. En el código, primero se crean dos hilos con pthread_create, que ejecutan la función que incrementa el valor de la variable. Luego, con pthread_join, esperamos a que ambos hilos terminen antes de mostrar el valor de shared.
+
+Lo interesante es que siempre que corremos el código, el valor final de shared es 2, sin importar cuántas veces lo ejecutemos, lo que demuestra que no hay condiciones de carrera y los hilos se alternan correctamente al acceder al recurso compartido.
+
+### Ejercicio 10
+Cuando agregamos un bucle que hace que cada hilo incremente la variable shared varias veces (por ejemplo, 100 veces), hay más oportunidades para que los hilos interfieran entre sí. Si ambos hilos intentan modificar shared al mismo tiempo, podrían sobrescribir los cambios de uno u otro, lo que provoca errores. Esto es una condición de carrera.
+
+Al aumentar el número de iteraciones, los errores se hacen más evidentes. Por ejemplo, si ambos hilos incrementan shared 100 veces cada uno, lo esperado sería que shared llegara a 200, pero en realidad podría quedar con un valor incorrecto porque los incrementos no se manejan de forma sincronizada.
+
+La solución sería usar un mutex para asegurarse de que solo un hilo pueda modificar la variable a la vez.
+
+### Ejercicio 11
+Este programa utiliza un mutex para asegurarse de que dos hilos no modifiquen la variable shared al mismo tiempo. Sin el mutex, los hilos podrían intentar incrementar la variable a la vez, lo que generaría un valor incorrecto.
+
+En este código, ambos hilos ejecutan la función function, que incrementa shared en 100 iteraciones. El mutex bloquea el acceso a la variable para que solo un hilo la modifique a la vez. Al final, el valor de shared será 200, porque los hilos se sincronizan correctamente.
+
+En resumen, el mutex asegura que no haya problemas de concurrencia entre los hilos.
+
+### Ejercicio 12
+Los semáforos son herramientas para controlar el acceso a recursos compartidos entre hilos, evitando que varios hilos accedan al mismo recurso al mismo tiempo. Se usan de la siguiente manera:
+
+Inicialización: Se inicia con un valor que indica cuántos hilos pueden acceder al recurso. Por ejemplo, 1 significa que solo un hilo puede acceder a la vez.
+
+Bloqueo: Un hilo usa sem_wait() para esperar hasta que el semáforo esté disponible (es decir, hasta que el recurso esté libre).
+
+Liberación: Cuando el hilo termina de usar el recurso, llama a sem_post() para liberar el semáforo, permitiendo que otro hilo lo use.
+
+El uso adecuado de semáforos evita que los hilos interfieran entre sí y previene errores como las condiciones de carrera, donde dos hilos modifican un recurso al mismo tiempo. Sin embargo, hay que usarlos con cuidado para no generar bloqueos (deadlocks).
+
 # Evaluación Unidad 4
 ## Documentacion 
 
